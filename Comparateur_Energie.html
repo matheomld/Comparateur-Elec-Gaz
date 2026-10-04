@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Comparateur Énergie</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111827;background:#f5f7fb}
+*{box-sizing:border-box} body{margin:0;padding:14px}.app{max-width:680px;margin:auto}
+h1{font-size:24px;margin:6px 0 4px}.sub{color:#667085;margin:0 0 14px;font-size:13px}
+.card{background:#fff;border-radius:18px;padding:16px;margin:11px 0;box-shadow:0 4px 20px #0000000d}
+h2{font-size:16px;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:12px;color:#667085;display:block;margin-bottom:5px}
+input{width:100%;border:1px solid #d9dee8;border-radius:11px;padding:11px;font-size:16px;background:#fff}
+.full{grid-column:1/-1}.tabs{display:flex;gap:7px;margin-bottom:12px}.tab{flex:1;border:1px solid #d9dee8;background:#fff;color:#111827;margin:0}.tab.active{background:#111827;color:#fff}
+.result{font-size:28px;font-weight:750}.positive{color:#087f5b}.negative{color:#c92a2a}
+.row{display:flex;justify-content:space-between;gap:15px;padding:8px 0;border-bottom:1px solid #eef0f4}.row:last-child{border:0}
+.muted{color:#667085}.badge{font-size:11px;background:#eef2ff;padding:5px 8px;border-radius:999px;display:inline-block;margin-bottom:10px}
+button{width:100%;border:0;border-radius:12px;padding:12px;font-size:14px;font-weight:650;background:#111827;color:#fff;margin-top:6px}
+.note{font-size:10.5px;color:#8a94a6;margin-top:13px;line-height:1.4}.hidden{display:none}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.full{grid-column:auto}body{padding:12px}}
+</style>
+</head>
+<body><main class="app">
+<h1>Comparateur Énergie</h1>
+<p class="sub">Comparaison rapide de la facture client avec l'offre ENGIE Pro.</p>
+
+<section class="card">
+<h2>Type de tarif</h2>
+<div class="tabs">
+<button class="tab active" id="baseBtn" onclick="setMode('base')">Base</button>
+<button class="tab" id="hphcBtn" onclick="setMode('hphc')">HP / HC</button>
+</div>
+</section>
+
+<section class="card"><h2>Facture actuelle</h2>
+<div id="clientBase" class="grid">
+<div class="full"><label>Consommation annuelle (kWh)</label><input id="conso" inputmode="decimal" placeholder="Ex. 28000"></div>
+<div><label>Prix du kWh (€)</label><input id="oldKwh" inputmode="decimal" placeholder="Ex. 0,102"></div>
+<div><label>Abonnement mensuel (€)</label><input id="oldSub" inputmode="decimal" placeholder="Ex. 29"></div>
+</div>
+<div id="clientHPHC" class="grid hidden">
+<div><label>Consommation HP / an (kWh)</label><input id="consoHP" inputmode="decimal" placeholder="Ex. 18000"></div>
+<div><label>Prix HP (€ / kWh)</label><input id="oldHP" inputmode="decimal" placeholder="Ex. 0,115"></div>
+<div><label>Consommation HC / an (kWh)</label><input id="consoHC" inputmode="decimal" placeholder="Ex. 10000"></div>
+<div><label>Prix HC (€ / kWh)</label><input id="oldHC" inputmode="decimal" placeholder="Ex. 0,085"></div>
+<div class="full"><label>Abonnement mensuel (€)</label><input id="oldSubHC" inputmode="decimal" placeholder="Ex. 29"></div>
+</div>
+</section>
+
+<section class="card"><h2>Offre ENGIE – Octobre 2026</h2>
+<span class="badge">Référence Pro électricité 3 ans • ≤ 36 kVA</span>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px;padding:11px 0;border-bottom:1px solid #eef0f4">
+  <div><strong style="font-size:14px">Promotion -25 %</strong><div class="muted" style="font-size:11px;margin-top:2px">Sur le prix du kWh de la fourniture</div></div>
+  <label style="margin:0;display:flex;align-items:center;gap:7px;font-size:13px;color:#111827">
+    <input id="promoToggle" type="checkbox" checked style="width:22px;height:22px" onchange="applyPromo()"> Activer
+  </label>
+</div>
+<div id="offerBase" class="grid">
+<div><label>Prix du kWh avec promo (€)</label><input id="newKwh" value="0,07015" data-promo="0,07015" data-normal="0,09353" inputmode="decimal"></div>
+<div><label>Abonnement mensuel (€)</label><input id="newSub" value="14,08" inputmode="decimal"></div>
+</div>
+<div id="offerHPHC" class="grid hidden">
+<div><label>Prix HP avec promo (€ / kWh)</label><input id="newHP" value="0,07560" data-promo="0,07560" data-normal="0,10080" inputmode="decimal"></div>
+<div><label>Prix HC avec promo (€ / kWh)</label><input id="newHC" value="0,05292" data-promo="0,05292" data-normal="0,07056" inputmode="decimal"></div>
+<div class="full"><label>Abonnement mensuel (€)</label><input id="newSubHC" value="14,08" inputmode="decimal"></div>
+</div>
+</section>
+
+<section class="card"><h2>Résultat</h2>
+<div class="row"><span class="muted">Coût actuel / an</span><strong id="oldTotal">—</strong></div>
+<div class="row"><span class="muted">ENGIE / an</span><strong id="newTotal">—</strong></div>
+<div style="padding-top:15px"><span class="muted">Économie annuelle</span><div class="result" id="saving">—</div></div>
+<div class="row"><span class="muted">Économie mensuelle</span><strong id="monthly">—</strong></div>
+<div class="row"><span class="muted">Économie</span><strong id="percent">—</strong></div>
+<button onclick="resetClient()">Effacer les données client</button>
+<p class="note">Tarifs fourniture saisis d'après la grille ENGIE Référence Pro électricité 3 ans – octobre 2026. La promotion de 25 % peut être activée ou désactivée dans le comparateur. Selon la grille, elle concerne le prix du kWh de la Part Fourniture la 1re année en cas de changement de fournisseur et sous les conditions prévues. Comparaison indicative limitée aux éléments saisis.</p>
+</section>
+</main>
+<script>
+let mode="base";
+const all=["conso","oldKwh","oldSub","consoHP","oldHP","consoHC","oldHC","oldSubHC","newKwh","newSub","newHP","newHC","newSubHC"];
+const n=id=>{let v=document.getElementById(id).value.trim().replace(/\s/g,"").replace(",",".");return parseFloat(v)||0};
+const eur=v=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(v);
+function applyPromo(){
+ const on=document.getElementById("promoToggle").checked;
+ ["newKwh","newHP","newHC"].forEach(id=>{
+   const el=document.getElementById(id);
+   el.value=on?el.dataset.promo:el.dataset.normal;
+ });
+ calc();
+}
+function setMode(m){
+ mode=m;
+ document.getElementById("clientBase").classList.toggle("hidden",m!=="base");
+ document.getElementById("offerBase").classList.toggle("hidden",m!=="base");
+ document.getElementById("clientHPHC").classList.toggle("hidden",m!=="hphc");
+ document.getElementById("offerHPHC").classList.toggle("hidden",m!=="hphc");
+ document.getElementById("baseBtn").classList.toggle("active",m==="base");
+ document.getElementById("hphcBtn").classList.toggle("active",m==="hphc");
+ calc();
+}
+function calc(){
+ let a=0,b=0,ready=false;
+ if(mode==="base"){
+   let c=n("conso"),ok=n("oldKwh"),os=n("oldSub"),nk=n("newKwh"),ns=n("newSub");
+   a=c*ok+os*12; b=c*nk+ns*12; ready=!!(c&&ok&&nk);
+ } else {
+   let hp=n("consoHP"),hc=n("consoHC"),ohp=n("oldHP"),ohc=n("oldHC"),os=n("oldSubHC");
+   let nhp=n("newHP"),nhc=n("newHC"),ns=n("newSubHC");
+   a=hp*ohp+hc*ohc+os*12; b=hp*nhp+hc*nhc+ns*12; ready=!!((hp||hc)&&ohp&&ohc&&nhp&&nhc);
+ }
+ let s=a-b, el=document.getElementById("saving");
+ document.getElementById("oldTotal").textContent=ready?eur(a):"—";
+ document.getElementById("newTotal").textContent=ready?eur(b):"—";
+ el.textContent=ready?eur(s):"—"; el.className="result "+(s>=0?"positive":"negative");
+ document.getElementById("monthly").textContent=ready?eur(s/12):"—";
+ document.getElementById("percent").textContent=(ready&&a)?(s/a*100).toFixed(1).replace(".",",")+" %":"—";
+}
+all.forEach(id=>document.getElementById(id).addEventListener("input",calc));
+function resetClient(){
+ ["conso","oldKwh","oldSub","consoHP","oldHP","consoHC","oldHC","oldSubHC"].forEach(id=>document.getElementById(id).value="");
+ calc();
+}
+calc();
+</script></body></html>
